@@ -50,9 +50,6 @@ class ClientApi(Resource):
         if data['gender']:
             Cl.gender = data['gender']
         db.session.commit()
-
-
-        db.session.commit()
         return 200
 
     def delete(self, id):
@@ -101,6 +98,7 @@ class OrderApi(Resource):
         if data['total']:
             Or.total = data['total']
         db.session.commit()
+        return 200
 
 
     def delete(self, id):
