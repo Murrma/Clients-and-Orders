@@ -11,47 +11,61 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 api = Api(app)
 
+class Authorization(Resource):
+    def auth(self):
+        data = requests.get_json(forse=True)
+
+        return 200
+
 
 class ClientApi(Resource):
+    @staticmethod
     def get(self, id=None):
         if id is None:
             info = Client.query.all()
             d = {}
             for i in info:
-                d[i.id] = [i.f_name, i.l_name, i.gender]
+                d[i.id] = [i.username, i.password, i.f_name, i.l_name,]
             return d
 
         else:
             info = Client.query.get(id)
             return jsonify(id = info.id,
+                           username = info.username,
+                           password = info.password,
                            f_name = info.f_name,
-                           l_name = info.l_name,
-                           gender = info.gender)
+                           l_name = info.l_name)
 
+    @staticmethod
     def post(self):
         data = requests.get_json(forse=True)
         #data == {f_name:..., ...}
 
-        db.session.add(Client(f_name = data['f_name'],
-                              l_name = data['l_name'],
-                              gender = data['gender']))
+        db.session.add(Client(username = data['username'],
+                              password = data['password'],
+                              f_name = data['f_name'],
+                              l_name = data['l_name']))
         db.session.commit()
         return 200
 
+    @staticmethod
     def patch(self, id):
         data = requests.get_json(forse=True)
         # data == {f_name:..., ...}
         Cl = Client.query.get(id)
 
+        if data['username']:
+            Cl.username = data['username']
+        if data['password']:
+            Cl.password = data['password']
         if data['f_name']:
             Cl.f_name = data['f_name']
         if data['l_name']:
             Cl.l_name = data['l_name']
-        if data['gender']:
-            Cl.gender = data['gender']
         db.session.commit()
         return 200
 
+    @staticmethod
     def delete(self, id):
         c = Client.query.get(id)
         o = Order.query.filter(Order.client_id == id).all()
@@ -62,6 +76,7 @@ class ClientApi(Resource):
         return 200
 
 class OrderApi(Resource):
+    @staticmethod
     def get(self, id=None):
         if id is None:
             info = Order.query.all()
@@ -76,6 +91,7 @@ class OrderApi(Resource):
                            client_id = info.client_id,
                            total = info.total)
 
+    @staticmethod
     def post(self):
         data = requests.get_json(forse=True)
         # data == {f_name:..., ...}
@@ -86,6 +102,7 @@ class OrderApi(Resource):
         db.session.commit()
         return 200
 
+    @staticmethod
     def patch(self, id):
         data = requests.get_json(forse=True)
         # data == {f_name:..., ...}
@@ -100,13 +117,14 @@ class OrderApi(Resource):
         db.session.commit()
         return 200
 
-
+    @staticmethod
     def delete(self, id):
         o = Order.query.get(id)
         db.session.delete(o)
         db.session.commit()
         return 200
 
+api.add_resource(Authorization, '/')
 api.add_resource(ClientApi, '/client/', '/client/<int:id>')
 api.add_resource(OrderApi, '/order/', '/order/<int:id>')
 
