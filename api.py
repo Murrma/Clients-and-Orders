@@ -1,22 +1,21 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
 from ClientModel import Client
 from OrderModel import Order
-import requests
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config["JWT_SECRET_KEY"] = "rf;kpkvbdtjm;fpkdpvfjovjcdlnlpjvfl"
+app.config["JWT_SECRET_KEY"] = "oresfsxfx"
 db = SQLAlchemy(app)
 api = Api(app)
 jwt = JWTManager(app)
 
-class Authorization(Resource):
-    def login(self):
-        data = requests.get_json(forse=True)
+class Login(Resource):
+    def post(self):
+        data = request.get_json(force=True)
         #data = {'username': '', 'password': ''}
         info = Client.query.filter_by(username = data['username']).one_or_none()
 
@@ -25,15 +24,15 @@ class Authorization(Resource):
         access_token = create_access_token(identity=data['username'])
         return jsonify(access_token=access_token)
 
-    @jwt_required()
-    def logout(self):
-        pass
+class Logout(Resource):
+    def ??():
+        return 200
 
 
 class ClientApi(Resource):
     @staticmethod
     @jwt_required()
-    def get(self, id=None):
+    def get(id=None):
         if id is None:
             info = Client.query.all()
             d = {}
@@ -50,8 +49,8 @@ class ClientApi(Resource):
                            l_name = info.l_name)
 
     @staticmethod
-    def post(self):
-        data = requests.get_json(forse=True)
+    def post():
+        data = request.get_json(force=True)
         #data == {'f_name':..., ...}
 
         db.session.add(Client(username = data['username'],
@@ -63,8 +62,8 @@ class ClientApi(Resource):
 
     @staticmethod
     @jwt_required()
-    def patch(self, id):
-        data = requests.get_json(forse=True)
+    def patch(id):
+        data = request.get_json(force=True)
         # data == {'f_name':..., ...}
         Cl = Client.query.get(id)
 
@@ -81,7 +80,7 @@ class ClientApi(Resource):
 
     @staticmethod
     @jwt_required()
-    def delete(self, id):
+    def delete(id):
         c = Client.query.get(id)
         o = Order.query.filter(Order.client_id == id).all()
         db.session.delete(c)
@@ -92,7 +91,7 @@ class ClientApi(Resource):
 
 class OrderApi(Resource):
     @staticmethod
-    def get(self, id=None):
+    def get(id=None):
         if id is None:
             info = Order.query.all()
             d = {}
@@ -108,8 +107,8 @@ class OrderApi(Resource):
 
     @staticmethod
     @jwt_required()
-    def post(self):
-        data = requests.get_json(forse=True)
+    def post():
+        data = request.get_json(force=True)
         # data == {f_name:..., ...}
 
         db.session.add(Order(date = data['date'],
@@ -120,8 +119,8 @@ class OrderApi(Resource):
 
     @staticmethod
     @jwt_required()
-    def patch(self, id):
-        data = requests.get_json(forse=True)
+    def patch(id):
+        data = request.get_json(force=True)
         # data == {f_name:..., ...}
         Or = Order.query.get(id)
 
@@ -136,13 +135,14 @@ class OrderApi(Resource):
 
     @staticmethod
     @jwt_required()
-    def delete(self, id):
+    def delete(id):
         o = Order.query.get(id)
         db.session.delete(o)
         db.session.commit()
         return 200
 
-api.add_resource(Authorization, '/')
+api.add_resource(Login, '/login/')
+api.add_resource(Logout, '/logout/')
 api.add_resource(ClientApi, '/client/', '/client/<int:id>')
 api.add_resource(OrderApi, '/order/', '/order/<int:id>')
 
