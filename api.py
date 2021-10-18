@@ -3,15 +3,22 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
 from ClientModel import Client
 from OrderModel import Order
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager, get_jwt
+import redis
+from datetime import timedelta
+
+ACCESS_EXPIRES = timedelta(hours=1)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JWT_SECRET_KEY"] = "oresfsxfx"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 db = SQLAlchemy(app)
 api = Api(app)
 jwt = JWTManager(app)
+
+jwt_redis_blocklist = redis.StrictRedis(host="localhost", port=6379, db=0, decode_responses=True)
 
 class Login(Resource):
     def post(self):
@@ -25,8 +32,17 @@ class Login(Resource):
         return jsonify(access_token=access_token)
 
 class Logout(Resource):
-    def ??():
-        return 200
+    @jwt.token_in_blocklist_loader
+    def check_if_token_is_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        token_in_redis = jwt_redis_blocklist.get(jti)
+        return token_in_redis is not None
+
+    @jwt_required()
+    def delete():
+        jti = get_jwt()["jti"]
+        jwt_redis_blocklist.set(jti, "", ex=ACCESS_EXPIRES)
+        return jsonify(msg="Access token revoked")
 
 
 class ClientApi(Resource):
